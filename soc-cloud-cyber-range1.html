@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Cloud Security SOC Mission</title>
+
+<style>
+
+body{
+background:#020617;
+color:#00ff9c;
+font-family:Courier New, monospace;
+text-align:center;
+padding:20px;
+}
+
+.container{
+max-width:950px;
+margin:auto;
+border:2px solid #00ff9c;
+padding:30px;
+border-radius:10px;
+box-shadow:0 0 20px #00ff9c44;
+}
+
+button{
+background:black;
+border:1px solid #00ff9c;
+color:#00ff9c;
+padding:10px 16px;
+margin:10px;
+cursor:pointer;
+}
+
+button:hover{
+background:#00ff9c;
+color:black;
+}
+
+input{
+padding:10px;
+width:60%;
+background:black;
+border:1px solid #00ff9c;
+color:#00ff9c;
+}
+
+.dashboard{
+background:#000;
+border:1px solid #00ff9c;
+padding:15px;
+margin:20px 0;
+text-align:left;
+}
+
+.progressBar{
+width:100%;
+height:15px;
+background:#111;
+}
+
+.progress{
+height:100%;
+width:0%;
+background:#00ff9c;
+}
+
+.explanation{
+margin-top:20px;
+color:#7fffd4;
+}
+
+.result{
+display:none;
+margin-top:30px;
+}
+
+.timer{
+font-size:18px;
+margin-bottom:10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🚨 CLOUD SOC DEFENSE</h1>
+
+<div id="start">
+
+<p id="intro"></p>
+
+<input id="name" placeholder="Nome completo">
+
+<br>
+
+<button onclick="startMission()">INICIAR MISSÃO</button>
+
+</div>
+
+<div class="timer" id="timer"></div>
+
+<div class="dashboard">
+
+📊 CLOUD SOC DASHBOARD
+
+⚠ IAM Login suspeito  
+⚠ Bucket público detectado  
+⚠ Alteração em Security Group  
+⚠ Pico de tráfego em Load Balancer  
+
+</div>
+
+<div class="progressBar">
+<div class="progress" id="progress"></div>
+</div>
+
+<div id="game"></div>
+
+<div class="explanation" id="explanation"></div>
+
+<div class="result" id="result"></div>
+
+<div id="ranking"></div>
+
+</div>
+
+<audio id="alertSound">
+<source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg">
+</audio>
+
+<script>
+
+const questions=[
+
+{
+q:"Qual princípio da segurança protege dados contra acesso não autorizado em cloud?",
+a:["Integridade","Disponibilidade","Confidencialidade",],
+correct:2,
+exp:"Confidencialidade protege dados armazenados em serviços como S3 ou Azure Storage."
+},
+
+{
+q:"Dados modificados sem autorização violam qual princípio?",
+a:["Confidencialidade","Integridade","Disponibilidade"],
+correct:1,
+exp:"Integridade garante que dados não sejam alterados indevidamente."
+},
+
+{
+q:"Ataque DDoS contra uma aplicação cloud afeta:",
+a:["Disponibilidade","Integridade","Confidencialidade"],
+correct:0,
+exp:"Disponibilidade garante acesso ao serviço."
+},
+
+{
+q:"Quem é responsável por configurar permissões de acesso em cloud?",
+a:["Provedor","ISP","Cliente"],
+correct:2,
+exp:"Modelo de responsabilidade compartilhada."
+},
+
+{
+q:"Qual prática reduz privilégios excessivos em IAM?",
+a:["VPN","Least Privilege","Proxy"],
+correct:1,
+exp:"Least Privilege concede apenas permissões necessárias."
+},
+
+{
+q:"Autenticação multifator é chamada de:",
+a:["MFA","IDS","RBAC"],
+correct:0,
+exp:"MFA adiciona camada extra de segurança."
+},
+
+{
+q:"Bucket S3 público pode causar qual risco?",
+a:["Vazamento de dados","Queda de servidor","Aumento de latência"],
+correct:0,
+exp:"Buckets mal configurados já causaram vários vazamentos."
+},
+
+{
+q:"Modelo de segurança que verifica continuamente identidade:",
+a:["Firewall","Proxy","Zero Trust"],
+correct:2,
+exp:"Zero Trust não confia automaticamente em nenhum acesso."
+},
+
+{
+q:"Sistema que gerencia identidades em AWS ou Azure:",
+a:["IDS","IAM","VPN"],
+correct:1,
+exp:"IAM controla usuários e permissões."
+},
+
+{
+q:"Ferramenta usada para análise de logs cloud:",
+a:["DNS","VPN","SIEM"],
+correct:2,
+exp:"SIEM centraliza logs e eventos."
+},
+
+{
+q:"Qual serviço protege aplicações contra ataques web?",
+a:["WAF","DNS","VPN"],
+correct:0,
+exp:"WAF filtra ataques HTTP."
+},
+
+{
+q:"Qual ataque tenta adivinhar senhas?",
+a:["DDoS","Força bruta","Malware"],
+correct:1,
+exp:"Ataque de força bruta tenta múltiplas combinações."
+},
+
+{
+q:"Criptografia de dados em trânsito usa:",
+a:["TFTP","DNS","TLS"],
+correct:2,
+exp:"TLS protege comunicação."
+},
+
+{
+q:"Controle baseado em função:",
+a:["IAM","RBAC","DNS"],
+correct:1,
+exp:"RBAC define permissões por papel."
+},
+
+{
+q:"Ferramenta que detecta intrusões:",
+a:["IDS","IAM","Proxy"],
+correct:0,
+exp:"IDS detecta atividades suspeitas."
+},
+
+{
+q:"Ataque que engana usuários com emails falsos:",
+a:["Malware","Ransomware","Phishing"],
+correct:2,
+exp:"Phishing rouba credenciais."
+},
+
+{
+q:"Firewall em cloud controla:",
+a:["Backups","Tráfego de rede","Logs"],
+correct:1,
+exp:"Firewalls controlam tráfego."
+},
+
+{
+q:"Criptografia em repouso protege:",
+a:["Rede","DNS","Dados armazenados"],
+correct:2,
+exp:"Protege dados armazenados."
+},
+
+{
+q:"Backup cloud ajuda em:",
+a:["Ataques DDoS","Monitoramento","Recuperação de dados"],
+correct:2,
+exp:"Backups permitem recuperação após incidentes."
+},
+
+{
+q:"Monitoramento contínuo permite:",
+a:["Desligar servidores","Detectar ataques","Reduzir criptografia"],
+correct:1,
+exp:"Monitoramento detecta incidentes rapidamente."
+}
+
+]
+
+let current=0
+let score=0
+let name=""
+let time=1800
+
+function startMission(){
+
+name=document.getElementById("name").value
+
+if(name==""){
+alert("Digite seu nome")
+return
+}
+
+document.getElementById("alertSound").play()
+
+startTimer()
+
+loadQuestion()
+
+}
+
+function loadQuestion(){
+
+if(current>=questions.length){
+finishMission()
+return
+}
+
+let q=questions[current]
+
+let html=`<p>${current+1}. ${q.q}</p>`
+
+q.a.forEach((opt,i)=>{
+html+=`<button onclick="answer(${i})">${opt}</button>`
+})
+
+document.getElementById("game").innerHTML=html
+
+updateProgress()
+
+}
+
+function answer(i){
+
+let q=questions[current]
+
+if(i===q.correct){
+score++
+document.getElementById("explanation").innerHTML="✔ "+q.exp
+}else{
+document.getElementById("explanation").innerHTML="✖ "+q.exp
+}
+
+current++
+
+setTimeout(loadQuestion,1200)
+
+}
+
+function updateProgress(){
+
+let percent=(current/questions.length)*100
+
+document.getElementById("progress").style.width=percent+"%"
+
+}
+
+function startTimer(){
+
+let timer=document.getElementById("timer")
+
+setInterval(function(){
+
+let min=Math.floor(time/60)
+let sec=time%60
+
+timer.innerHTML="⏱ Tempo restante: "+min+":"+sec
+
+time--
+
+},1000)
+
+}
+
+function finishMission(){
+
+document.getElementById("game").innerHTML=""
+
+let result=document.getElementById("result")
+
+result.style.display="block"
+
+result.innerHTML=`
+<h2>MISSÃO CONCLUÍDA</h2>
+<p>Analista: ${name}</p>
+<p>Pontuação: ${score} / ${questions.length}</p>
+<p>Tire um PRINT desta tela e envie para a professora.</p>
+`
+
+saveRanking()
+
+}
+
+function saveRanking(){
+
+let ranking=JSON.parse(localStorage.getItem("ranking")||"[]")
+
+ranking.push({name,score})
+
+ranking.sort((a,b)=>b.score-a.score)
+
+localStorage.setItem("ranking",JSON.stringify(ranking))
+
+let html="<h3>🏆 Ranking SOC</h3>"
+
+ranking.slice(0,5).forEach(r=>{
+html+=`<p>${r.name} - ${r.score}</p>`
+})
+
+document.getElementById("ranking").innerHTML=html
+
+}
+
+</script>
+
+</body>
+</html>
